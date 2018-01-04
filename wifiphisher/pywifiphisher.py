@@ -512,6 +512,11 @@ class WifiphisherEngine:
             'target_ap_logo_path':
             ap_logo_path or ""
         })
+        # add wps_enable into the template context
+        if args.wpspbc_exploit:
+            template.merge_context({'wps_pbc_attack': "1"})
+        else:
+            template.merge_context({'wps_pbc_attack': "0"})
 
         # We want to set this now for hostapd. Maybe the interface was in "monitor"
         # mode for network discovery before (e.g. when --noextensions is enabled).

